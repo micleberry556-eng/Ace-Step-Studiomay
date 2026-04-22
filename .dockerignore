@@ -1,0 +1,78 @@
+# =============================================================================
+# .dockerignore — ACE-Step Studio (root-level build context)
+# =============================================================================
+
+# Version control
+.git
+.gitattributes
+
+# Model checkpoints (mount as volumes at runtime)
+models/
+ACE-Step-1.5/checkpoints/
+*.safetensors
+*.bin
+*.ckpt
+*.pt
+
+# Generated outputs
+ACE-Step-1.5/gradio_outputs/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.venv/
+venv/
+
+# Node artifacts
+node_modules/
+app/node_modules/
+app/server/node_modules/
+app/dist/
+
+# Portable runtimes (Windows)
+python/
+node/
+ffmpeg/
+
+# IDE / editor files
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# CI/CD
+.github/
+
+# Docs / assets not needed at runtime
+docs/
+ACE-Step-1.5/docs/
+ACE-Step-1.5/assets/
+
+# Database files (mount as volume)
+*.db
+*.db-journal
+app/server/data/*.db
+
+# Temp / cache
+cache/
+temp/
+downloads/
+tools/
+app/server/tmp/
+app/server/public/audio/
+
+# Windows scripts
+*.bat
+*.ps1
+
+# Build artifacts
+ACE-Step-1.5/acestep/third_parts/nano-vllm/build/
+ACE-Step-1.5/acestep/third_parts/nano-vllm/nano_vllm.egg-info/
