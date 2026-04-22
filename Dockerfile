@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # =============================================================================
 # ACE-Step Studio — Universal Linux Dockerfile (CPU + GPU)
 # =============================================================================
@@ -21,7 +20,9 @@
 # =============================================================================
 
 # ==================== Stage 1: Build frontend ====================
-FROM node:20-bookworm-slim AS frontend-build
+# Use full bookworm (not slim) — better-sqlite3 and esbuild need
+# gcc, make, python3 for native module compilation.
+FROM node:20-bookworm AS frontend-build
 
 WORKDIR /build/app
 
@@ -34,7 +35,7 @@ RUN npm ci
 COPY app/ ./
 RUN npx vite build
 
-# Install server dependencies (with native modules like better-sqlite3)
+# Install server dependencies (better-sqlite3 compiles native .node addon)
 WORKDIR /build/server
 COPY app/server/package.json ./
 COPY app/server/package-lock.json ./
