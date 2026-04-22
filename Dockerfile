@@ -69,12 +69,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN ln -sf /usr/bin/python3 /usr/bin/python
+# ---- Python venv (avoids PEP 668 / system pip conflicts) ----
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-RUN pip install --no-cache-dir --break-system-packages --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # ---- PyTorch CPU ----
-RUN pip install --no-cache-dir --break-system-packages \
+RUN pip install --no-cache-dir \
         torch==2.10.0 \
         torchvision==0.25.0 \
         torchaudio==2.10.0 \
@@ -86,11 +89,11 @@ WORKDIR /app
 COPY ACE-Step-1.5/ /app/ACE-Step-1.5/
 
 # Install nano-vllm from bundled source
-RUN pip install --no-cache-dir --break-system-packages --no-deps \
+RUN pip install --no-cache-dir --no-deps \
         /app/ACE-Step-1.5/acestep/third_parts/nano-vllm
 
 # ---- Python dependencies (required) ----
-RUN pip install --no-cache-dir --break-system-packages \
+RUN pip install --no-cache-dir \
         "safetensors==0.7.0" \
         "transformers>=4.51.0,<4.58.0" \
         "diffusers" \
@@ -117,8 +120,8 @@ RUN pip install --no-cache-dir --break-system-packages \
         "pyyaml"
 
 # ---- Optional packages (may fail on CPU — that is OK) ----
-RUN pip install --no-cache-dir --break-system-packages "torchcodec>=0.9.1" || true
-RUN pip install --no-cache-dir --break-system-packages "torchao" || true
+RUN pip install --no-cache-dir "torchcodec>=0.9.1" || true
+RUN pip install --no-cache-dir "torchao" || true
 
 # ---- Copy built frontend ----
 COPY --from=frontend-build /build/app/dist /app/app/dist
@@ -149,7 +152,7 @@ ENV TOKENIZERS_PARALLELISM=false
 ENV MANAGE_PIPELINE=true
 ENV PORT=3001
 ENV ACESTEP_PORT=8001
-ENV PYTHON_PATH=python3
+ENV PYTHON_PATH=/opt/venv/bin/python
 ENV ACESTEP_PATH=/app/ACE-Step-1.5
 ENV NODE_ENV=production
 
