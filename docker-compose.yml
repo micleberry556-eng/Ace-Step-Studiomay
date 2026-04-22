@@ -2,8 +2,11 @@
 # ACE-Step Studio — Docker Compose
 # =============================================================================
 #
-# Start:
+# CPU (без видеокарты):
 #   docker compose up --build -d
+#
+# GPU (NVIDIA):
+#   docker compose --profile gpu up --build -d
 #
 # Stop:
 #   docker compose down
@@ -14,6 +17,8 @@
 # =============================================================================
 
 services:
+
+  # ---- CPU mode (default, any Linux server/PC) ----
   acestep:
     build:
       context: .
@@ -56,6 +61,63 @@ services:
       timeout: 10s
       start_period: 300s
       retries: 3
+
+  # ---- GPU mode (NVIDIA, requires nvidia-container-toolkit) ----
+  acestep-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    image: acestep-studio-gpu:latest
+    container_name: acestep-studio-gpu
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - MANAGE_PIPELINE=${MANAGE_PIPELINE:-true}
+      - ACESTEP_MODE=${ACESTEP_MODE:-gradio}
+      - ACESTEP_LLM_BACKEND=${ACESTEP_LLM_BACKEND:-pt}
+      - ACESTEP_INIT_SERVICE=${ACESTEP_INIT_SERVICE:-true}
+      - ACESTEP_CONFIG_PATH=${ACESTEP_CONFIG_PATH:-acestep-v15-turbo}
+      - ACESTEP_LM_MODEL_PATH=${ACESTEP_LM_MODEL_PATH:-acestep-5Hz-lm-0.6B}
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      - TOKENIZERS_PARALLELISM=false
+
+    ports:
+      - "${APP_PORT:-3001}:3001"
+      - "${GRADIO_PORT:-7860}:7860"
+      - "${API_PORT:-8001}:8001"
+
+    volumes:
+      - ./checkpoints:/app/ACE-Step-1.5/checkpoints
+      - hf_cache:/root/.cache/huggingface
+      - ./data:/app/app/server/data
+      - ./gradio_outputs:/app/ACE-Step-1.5/gradio_outputs
+
+    shm_size: "4gb"
+    restart: unless-stopped
+
+    healthcheck:
+      test: >-
+        curl -sf http://localhost:3001/ > /dev/null 2>&1 ||
+        curl -sf http://localhost:7860/ > /dev/null 2>&1 ||
+        exit 1
+      interval: 30s
+      timeout: 10s
+      start_period: 300s
+      retries: 3
+
+    profiles:
+      - gpu
 
 volumes:
   hf_cache:
