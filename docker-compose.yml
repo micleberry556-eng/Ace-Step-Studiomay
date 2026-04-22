@@ -1,103 +1,36 @@
 # =============================================================================
-# ACE-Step Studio — Docker Compose (Universal Linux)
+# ACE-Step Studio — Docker Compose
 # =============================================================================
 #
-# Quick start (GPU):
-#   docker compose up --build
-#
-# Quick start (CPU-only):
-#   docker compose up --build acestep-studio-cpu
+# Start:
+#   docker compose up --build -d
 #
 # Stop:
 #   docker compose down
 #
-# View logs:
+# Logs:
 #   docker compose logs -f
 #
-# Override settings via .env file or shell environment variables.
 # =============================================================================
 
 services:
-  # ---- GPU mode (requires NVIDIA Container Toolkit) ----
-  acestep-studio:
+  acestep:
     build:
       context: .
       dockerfile: Dockerfile
     image: acestep-studio:latest
     container_name: acestep-studio
 
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
     env_file:
       - path: .env
         required: false
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
       - MANAGE_PIPELINE=${MANAGE_PIPELINE:-true}
       - ACESTEP_MODE=${ACESTEP_MODE:-gradio}
       - ACESTEP_LLM_BACKEND=${ACESTEP_LLM_BACKEND:-pt}
       - ACESTEP_INIT_SERVICE=${ACESTEP_INIT_SERVICE:-true}
       - ACESTEP_CONFIG_PATH=${ACESTEP_CONFIG_PATH:-acestep-v15-turbo}
       - ACESTEP_LM_MODEL_PATH=${ACESTEP_LM_MODEL_PATH:-acestep-5Hz-lm-0.6B}
-      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-      - TOKENIZERS_PARALLELISM=false
-
-    ports:
-      - "${APP_PORT:-3001}:3001"
-      - "${GRADIO_PORT:-7860}:7860"
-      - "${API_PORT:-8001}:8001"
-
-    volumes:
-      # Model checkpoints — persist across rebuilds, share with host
-      - ./checkpoints:/app/ACE-Step-1.5/checkpoints
-      # HuggingFace cache — avoid re-downloading models
-      - hf_cache:/root/.cache/huggingface
-      # SQLite database — persist user data
-      - ./data:/app/app/server/data
-      # Generated audio output
-      - ./gradio_outputs:/app/ACE-Step-1.5/gradio_outputs
-
-    shm_size: "2gb"
-    restart: unless-stopped
-
-    healthcheck:
-      test: >-
-        curl -sf http://localhost:3001/ > /dev/null 2>&1 ||
-        curl -sf http://localhost:7860/ > /dev/null 2>&1 ||
-        exit 1
-      interval: 30s
-      timeout: 10s
-      start_period: 300s
-      retries: 3
-
-    profiles:
-      - default
-      - gpu
-
-  # ---- CPU-only mode (no GPU required) ----
-  acestep-studio-cpu:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: acestep-studio:latest
-    container_name: acestep-studio-cpu
-
-    env_file:
-      - path: .env
-        required: false
-    environment:
-      - MANAGE_PIPELINE=${MANAGE_PIPELINE:-true}
-      - ACESTEP_MODE=${ACESTEP_MODE:-gradio}
-      - ACESTEP_LLM_BACKEND=pt
-      - ACESTEP_INIT_SERVICE=${ACESTEP_INIT_SERVICE:-true}
-      - ACESTEP_CONFIG_PATH=${ACESTEP_CONFIG_PATH:-acestep-v15-turbo}
-      - ACESTEP_LM_MODEL_PATH=${ACESTEP_LM_MODEL_PATH:-acestep-5Hz-lm-0.6B}
       - TOKENIZERS_PARALLELISM=false
 
     ports:
@@ -123,9 +56,6 @@ services:
       timeout: 10s
       start_period: 300s
       retries: 3
-
-    profiles:
-      - cpu
 
 volumes:
   hf_cache:
